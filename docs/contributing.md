@@ -227,7 +227,39 @@ Help improve our documentation:
 - Add translations
 - Update outdated information
 
-## Development Guidelines
+## Development Standards
+
+This project follows a set of standards to ensure high code quality and consistency:
+
+### Coding Standards
+- **Language**: Go (Golang)
+- **Version**: 1.21 or later
+- **Practices**: Follow best practices including idiomatic Go conventions
+- **Formatting**: Use `gofmt` for code formatting
+- **Linting**: Use `go vet` for static code analysis
+
+### Commit Standards
+- **Format**: Conventional Commits (e.g., `feat`, `fix`, `docs`, `test`)
+- **Example**: `feat: add new event type`
+- **Structure**: Subject line followed by details and closing issues if any
+
+### Testing Standards
+- **Unit Tests**: Required for all functional changes
+- **Coverage**: Aim for above 80% coverage
+- **Tools**: Use built-in Go testing framework (`testing`) and coverage tools
+- **Formats**: Test outputs should be in standard formats (e.g., JSON)
+
+### Documentation Standards
+- **Style**: Follow Markdown format
+- **CLI Docs**: Update command help and examples
+- **Project Docs**: Update user and contributor guides
+
+### Review Standards
+- **Reviews**: All changes must be peer-reviewed
+- **Approvals**: At least one approval by another maintainer
+- **Checks**: Ensure all CI checks are passing before merging
+
+---
 
 ### Project Structure
 

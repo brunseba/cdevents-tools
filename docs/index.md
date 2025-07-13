@@ -92,6 +92,7 @@ go build -o cdevents-cli
 - [Examples](examples.md) - Real-world usage examples
 - [Docker Guide](docker.md) - Docker deployment instructions
 - [Contributing](contributing.md) - How to contribute to the project
+- [Development Standards](development-standards.md) - Development standards and practices
 
 ## Community
 

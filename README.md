@@ -168,9 +168,14 @@ export CDEVENTS_OUTPUT="json"
 - [Examples](https://cdevents.github.io/cdevents-cli/examples/) - Real-world usage examples
 - [Docker Guide](https://cdevents.github.io/cdevents-cli/docker/) - Docker deployment instructions
 
+## Development
+
+- [Contributing Guide](https://cdevents.github.io/cdevents-cli/contributing/) - How to contribute to the project
+- [Development Standards](https://cdevents.github.io/cdevents-cli/development-standards/) - Development standards and practices
+
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](https://cdevents.github.io/cdevents-cli/contributing/) for details.
+We welcome contributions! Please see our [Contributing Guide](https://cdevents.github.io/cdevents-cli/contributing/) for details and review our [Development Standards](https://cdevents.github.io/cdevents-cli/development-standards/) for coding practices and quality requirements.
 
 ## Community
 

@@ -35,6 +35,7 @@ nav:
   - Examples: examples.md
   - Docker: docker.md
   - Contributing: contributing.md
+  - Development Standards: development-standards.md
 
 plugins:
   - search
