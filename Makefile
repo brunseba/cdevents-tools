@@ -1,6 +1,6 @@
 # CDEvents CLI Makefile
 
-.PHONY: quality quality-docker test coverage build clean install help
+.PHONY: quality quality-docker test coverage build clean install help image image-quality image-all deploy
 
 # Default target
 help:
@@ -14,6 +14,10 @@ help:
 	@echo "  make build          - Build the binary"
 	@echo "  make clean          - Clean build artifacts"
 	@echo "  make install        - Install dependencies"
+	@echo "  make image          - Build Docker image for cdevents-cli"
+	@echo "  make image-quality  - Build Docker image for quality tools"
+	@echo "  make image-all      - Build both Docker images"
+	@echo "  make deploy         - Push Docker images to registry"
 
 # Install dependencies
 install:
@@ -32,6 +36,25 @@ coverage:
 # Build the binary
 build:
 	go build -o cdevents-cli .
+
+# Build Docker image for cdevents-cli
+image:
+	@echo "Building CDEvents CLI Docker image..."
+	docker build -t ghcr.io/brunseba/cdevents-tools/cdevents-cli:latest .
+
+# Build Docker image for quality tools
+image-quality:
+	@echo "Building CDEvents CLI Quality Tools Docker image..."
+	docker build -t ghcr.io/brunseba/cdevents-tools/cdevents-cli-quality:latest -f Dockerfile.quality .
+
+# Build both Docker images
+image-all: image image-quality
+
+# Push Docker images to registry
+deploy:
+	@echo "Pushing Docker images to GitHub Container Registry..."
+	docker push ghcr.io/brunseba/cdevents-tools/cdevents-cli:latest
+	docker push ghcr.io/brunseba/cdevents-tools/cdevents-cli-quality:latest
 
 # Clean build artifacts
 clean:

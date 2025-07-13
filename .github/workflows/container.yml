@@ -1,0 +1,261 @@
+name: Build and Push Container Images
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    strategy:
+      matrix:
+        include:
+          - image: cdevents-cli
+            dockerfile: Dockerfile
+            context: .
+            description: "CDEvents CLI tool for generating and sending CDEvents"
+          - image: cdevents-cli-quality
+            dockerfile: Dockerfile.quality
+            context: .
+            description: "CDEvents CLI quality analysis tools"
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=raw,value=latest,enable={{is_default_branch}}
+        labels: |
+          org.opencontainers.image.title=${{ matrix.image }}
+          org.opencontainers.image.description=${{ matrix.description }}
+          org.opencontainers.image.url=https://github.com/${{ github.repository }}
+          org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          org.opencontainers.image.version=${{ github.ref_name }}
+          org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+          org.opencontainers.image.revision=${{ github.sha }}
+          org.opencontainers.image.licenses=MIT
+
+    - name: Build and push container image
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ matrix.context }}
+        file: ${{ matrix.dockerfile }}
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILDTIME=${{ github.event.head_commit.timestamp }}
+          VERSION=${{ github.ref_name }}
+          REVISION=${{ github.sha }}
+
+    - name: Generate SBOM
+      if: github.event_name != 'pull_request'
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}:${{ steps.meta.outputs.version }}
+        format: spdx-json
+        output-file: sbom-${{ matrix.image }}.spdx.json
+
+    - name: Upload SBOM
+      if: github.event_name != 'pull_request'
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom-${{ matrix.image }}
+        path: sbom-${{ matrix.image }}.spdx.json
+
+  security-scan:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+
+    strategy:
+      matrix:
+        include:
+          - image: cdevents-cli
+          - image: cdevents-cli-quality
+
+    steps:
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}:${{ steps.meta.outputs.version }}
+        format: sarif
+        output: trivy-results-${{ matrix.image }}.sarif
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: trivy-results-${{ matrix.image }}.sarif
+        category: trivy-${{ matrix.image }}
+
+  update-readme:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update container documentation
+      run: |
+        # Create or update container documentation
+        cat > CONTAINER.md << 'EOF'
+        # Container Images
+
+        This project provides Docker container images published to GitHub Container Registry.
+
+        ## Available Images
+
+        ### CDEvents CLI (`cdevents-cli`)
+        
+        The main CLI application for generating and sending CDEvents.
+
+        ```bash
+        # Pull the latest image
+        docker pull ghcr.io/${{ github.repository }}/cdevents-cli:latest
+
+        # Run the CLI
+        docker run --rm ghcr.io/${{ github.repository }}/cdevents-cli:latest --help
+
+        # Generate a pipeline started event
+        docker run --rm ghcr.io/${{ github.repository }}/cdevents-cli:latest \
+          generate pipeline started --id "pipeline-123" --name "my-pipeline"
+        ```
+
+        ### Quality Tools (`cdevents-cli-quality`)
+        
+        Container with quality analysis tools for development and CI/CD.
+
+        ```bash
+        # Pull the quality tools image
+        docker pull ghcr.io/${{ github.repository }}/cdevents-cli-quality:latest
+
+        # Run quality analysis
+        docker run --rm -v $(pwd):/app ghcr.io/${{ github.repository }}/cdevents-cli-quality:latest
+        ```
+
+        ## Image Tags
+
+        - `latest` - Latest stable release from main branch
+        - `main` - Latest build from main branch
+        - `v*` - Specific version releases
+        - `pr-*` - Pull request builds (for testing)
+
+        ## Multi-Architecture Support
+
+        All images support multiple architectures:
+        - `linux/amd64` (x86_64)
+        - `linux/arm64` (ARM64/AArch64)
+
+        ## Security
+
+        - Images are automatically scanned for vulnerabilities using Trivy
+        - Software Bill of Materials (SBOM) is generated for each image
+        - Images run as non-root user for enhanced security
+        - Regular security updates through automated rebuilds
+
+        ## Registry Information
+
+        - **Registry**: GitHub Container Registry (`ghcr.io`)
+        - **Namespace**: `${{ github.repository }}`
+        - **Visibility**: Public
+        - **Last Updated**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+        EOF
+
+    - name: Update README with container info
+      run: |
+        # Check if README.md contains container information section
+        if ! grep -q "## Container Images" README.md; then
+          echo "" >> README.md
+          echo "## Container Images" >> README.md
+          echo "" >> README.md
+          echo "Pre-built container images are available on GitHub Container Registry:" >> README.md
+          echo "" >> README.md
+          echo '```bash' >> README.md
+          echo "# Pull and run the latest version" >> README.md
+          echo "docker pull ghcr.io/${{ github.repository }}/cdevents-cli:latest" >> README.md
+          echo "docker run --rm ghcr.io/${{ github.repository }}/cdevents-cli:latest --help" >> README.md
+          echo '```' >> README.md
+          echo "" >> README.md
+          echo "See [CONTAINER.md](CONTAINER.md) for detailed container usage instructions." >> README.md
+        fi
+
+    - name: Commit container documentation
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add CONTAINER.md README.md
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "docs: update container documentation
+
+          - Add CONTAINER.md with usage instructions
+          - Update README.md with container registry information
+          - Include multi-architecture and security details
+          
+          Auto-generated by container workflow"
+          git push
+        fi
