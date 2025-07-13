@@ -29,7 +29,7 @@ RUN go install github.com/fzipp/gocyclo/cmd/gocyclo@latest && \
 WORKDIR /app
 
 # Copy go.mod and go.sum first for better caching
-COPY go.mod go.sum ./
+COPY go.mod go.sum* ./
 
 # Download dependencies
 RUN go mod download
