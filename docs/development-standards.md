@@ -159,6 +159,20 @@ test: enforce code coverage for cmd package
 - **Backwards Compatibility**: Maintain compatibility with previous versions
 - **Validation**: Validate events against CDEvents schema
 
+### CloudEvents Standard
+- **CloudEvents v1.0**: Full compatibility with CloudEvents specification v1.0
+- **Transport Format**: Events are transportable as CloudEvents using `api.AsCloudEvent()`
+- **Binary Encoding**: Support for CloudEvents binary content mode over HTTP
+- **Event Mapping**: Proper mapping between CDEvents and CloudEvents attributes:
+  - CDEvents `id` → CloudEvents `id`
+  - CDEvents `source` → CloudEvents `source`
+  - CDEvents `type` → CloudEvents `type`
+  - CDEvents `subject.id` → CloudEvents `subject`
+  - CDEvents `timestamp` → CloudEvents `time`
+  - CDEvents event data → CloudEvents `data` (JSON format)
+- **Custom Data**: CloudEvents data field includes full CDEvents with custom data
+- **Content Type**: Uses `application/json` for CloudEvents `datacontenttype`
+
 ### Open Source Standards
 - **License**: Apache License 2.0
 - **Contributing**: Clear contribution guidelines

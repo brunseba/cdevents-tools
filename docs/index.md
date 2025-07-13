@@ -12,7 +12,8 @@ CDEvents CLI is a powerful tool designed to integrate with your CI/CD pipeline b
 - ✅ **Custom Data Support**: Add custom data, labels, annotations, and links to events
 - ✅ **Multiple Input Formats**: Support JSON, YAML, and key=value pairs for custom data
 - ✅ **Multiple Transports**: Send events via HTTP, console output, or file
-- ✅ **CloudEvents Compatible**: Full CloudEvents specification support
+- ✅ **CloudEvents Compatible**: Full CloudEvents v1.0 specification support with binary encoding
+- ✅ **Standard Compliance**: Follows CDEvents v0.4.1 and CloudEvents v1.0 standards
 - ✅ **Flexible Configuration**: Command-line flags and configuration files
 - ✅ **Docker Support**: Containerized deployment with multi-platform binaries
 - ✅ **Retry Logic**: Built-in retry mechanisms with configurable timeouts
@@ -28,6 +29,38 @@ CDEvents extends CloudEvents by introducing purpose and semantics to events, pro
 - **Event Linking**: Ability to link related events together
 - **Observability**: Enhanced visibility into your delivery pipeline
 - **Interoperability**: Common format across different tools
+
+## CloudEvents Compatibility
+
+This CLI tool provides full compatibility with the [CloudEvents v1.0 specification](https://cloudevents.io/), ensuring seamless integration with CloudEvents-compatible systems:
+
+### Transport Layer
+- **HTTP Binary Mode**: Events are sent as CloudEvents using binary content mode over HTTP
+- **Event Mapping**: Automatic mapping between CDEvents and CloudEvents attributes
+- **Standard Headers**: Proper CloudEvents headers (ce-specversion, ce-type, ce-source, etc.)
+- **JSON Payload**: CDEvents data is embedded in CloudEvents `data` field as JSON
+
+### Event Transformation
+
+| CDEvents Attribute | CloudEvents Attribute | Description |
+|-------------------|----------------------|-------------|
+| `id` | `id` | Unique event identifier |
+| `source` | `source` | Event source URI |
+| `type` | `type` | Event type (e.g., `dev.cdevents.pipeline.started.0.2.0`) |
+| `subject.id` | `subject` | Subject identifier |
+| `timestamp` | `time` | Event timestamp |
+| Event data | `data` | Full CDEvents payload including custom data |
+
+### Output Formats
+- **Native CDEvents**: JSON/YAML output in CDEvents format
+- **CloudEvents**: JSON output in CloudEvents envelope format
+- **Transport Ready**: Events ready for CloudEvents-compatible message brokers
+
+### Integration Benefits
+- **Ecosystem Compatibility**: Works with any CloudEvents-compatible system
+- **Message Brokers**: Compatible with Kafka, Pulsar, RabbitMQ (with CloudEvents plugins)
+- **Cloud Platforms**: Native support for AWS EventBridge, Google Cloud Pub/Sub, Azure Event Grid
+- **Observability**: Compatible with OpenTelemetry and other observability tools
 
 ## Quick Start
 
