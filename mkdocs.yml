@@ -34,8 +34,16 @@ nav:
   - CLI Reference: cli-reference.md
   - Examples: examples.md
   - Docker: docker.md
+  - Quality:
+    - Quality Metrics: quality-metrics.md
+    - Quality Report: quality/QUALITY_REPORT.md
+    - Coverage Summary: quality/coverage-summary.md
+    - Complexity Report: quality/complexity-report.md
+    - Linting Report: quality/linting-report.md
+    - Performance Metrics: quality/performance-metrics.md
   - Contributing: contributing.md
   - Development Standards: development-standards.md
+  - License: LICENSE.md
 
 plugins:
   - search

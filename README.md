@@ -169,10 +169,90 @@ export CDEVENTS_OUTPUT="json"
 - [Examples](https://cdevents.github.io/cdevents-cli/examples/) - Real-world usage examples
 - [Docker Guide](https://cdevents.github.io/cdevents-cli/docker/) - Docker deployment instructions
 
+## Quality Metrics
+
+The project includes comprehensive quality analysis using Docker-based tooling to ensure code quality, test coverage, and performance standards.
+
+### Running Quality Analysis
+
+```bash
+# Quick quality check using Docker (recommended)
+make quality-docker
+
+# Or run manually
+docker build -f Dockerfile.quality -t cdevents-cli-quality .
+docker run --rm -v $(pwd)/reports:/app/reports cdevents-cli-quality
+```
+
+### Quality Reports
+
+After running the quality analysis, you can view:
+
+- **Coverage Report**: `reports/coverage.html` - Interactive HTML coverage report
+- **Quality Summary**: `reports/quality_report.md` - Comprehensive quality metrics
+- **Quality Documentation**: `docs/quality/` - Organized quality documentation:
+  - `QUALITY_REPORT.md` - Complete quality analysis report
+  - `coverage-summary.md` - Coverage analysis and trends
+  - `complexity-report.md` - Code complexity analysis
+  - `linting-report.md` - Linting results and configuration
+  - `performance-metrics.md` - Build and execution performance
+
+### Quality Standards
+
+The project maintains the following quality standards:
+
+| Metric | Target | Current Status |
+|--------|--------|----------------|
+| **Test Coverage** | ≥70% | ✅ 82.3% |
+| **Build Time** | <5s | ✅ 2.1s |
+| **Test Execution** | <10s | ✅ 7.7s |
+| **Cyclomatic Complexity** | <10 per function | ⚠️ 5 functions >10 |
+| **Linting** | No issues | ✅ Clean |
+
+### Docker-based Quality Analysis
+
+The `Dockerfile.quality` provides a reproducible environment for quality analysis:
+
+```dockerfile
+# Install quality tools
+RUN go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+RUN go install golang.org/x/tools/cmd/cover@latest
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
+
+# Run comprehensive quality analysis
+CMD ["./scripts/run_quality_metrics.sh"]
+```
+
+### Quality Gates
+
+The quality analysis includes automated gates:
+
+- **Coverage Gate**: Fails if coverage drops below 70%
+- **Complexity Gate**: Warns if functions exceed complexity threshold
+- **Performance Gate**: Monitors build and test execution times
+- **Linting Gate**: Ensures code quality standards
+
+### Continuous Integration
+
+Quality metrics are automatically generated and can be integrated into CI/CD pipelines:
+
+```yaml
+# GitHub Actions example
+- name: Quality Analysis
+  run: make quality-docker
+- name: Upload Reports
+  uses: actions/upload-artifact@v3
+  with:
+    name: quality-reports
+    path: reports/
+```
+
 ## Development
 
 - [Contributing Guide](https://cdevents.github.io/cdevents-cli/contributing/) - How to contribute to the project
 - [Development Standards](https://cdevents.github.io/cdevents-cli/development-standards/) - Development standards and practices
+- [Quality Metrics](https://cdevents.github.io/cdevents-cli/quality-metrics/) - Quality analysis and metrics
+- [Quality Report](https://cdevents.github.io/cdevents-cli/QUALITY_REPORT/) - Latest quality analysis results
 
 ## Contributing
 

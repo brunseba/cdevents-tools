@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      run: |
+        go mod download
+        go mod tidy
+        
+    - name: Run tests
+      run: |
+        go test ./... -v -coverprofile=coverage.out -covermode=atomic
+        
+    - name: Check coverage
+      run: |
+        COVERAGE=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | sed 's/%//')
+        echo "Coverage: ${COVERAGE}%"
+        if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+          echo "❌ Coverage below threshold (70%)"
+          exit 1
+        else
+          echo "✅ Coverage meets threshold (70%)"
+        fi
+        
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: v1.55.2
+        args: --verbose
+        
+    - name: Build
+      run: |
+        go build -v ./...
+        
+    - name: Check complexity
+      run: |
+        go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+        COMPLEX_FUNCS=$(gocyclo -over 15 . | wc -l)
+        echo "Functions with complexity > 15: $COMPLEX_FUNCS"
+        if [ "$COMPLEX_FUNCS" -gt 0 ]; then
+          echo "⚠️ High complexity functions found:"
+          gocyclo -over 15 .
+        else
+          echo "✅ No high complexity functions found"
+        fi

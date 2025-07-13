@@ -151,7 +151,9 @@ test: enforce code coverage for cmd package
   - Binary size monitoring
   - Linting issue tracking
 - **Quality Gates**: Automated quality gates with configurable thresholds
-- **Documentation Integration**: Quality reports automatically copied to documentation
+- **Documentation Integration**: Quality reports automatically organized in `docs/quality/` folder
+- **Structured Reports**: Separate documentation for coverage, complexity, linting, and performance
+- **Interactive Reports**: HTML coverage reports and detailed analysis
 
 ## Security Standards
 
