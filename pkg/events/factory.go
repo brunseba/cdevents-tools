@@ -3,28 +3,18 @@ package events
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cdevents/sdk-go/pkg/api"
 	cdeventsv04 "github.com/cdevents/sdk-go/pkg/api/v04"
 	"github.com/google/uuid"
-	"gopkg.in/yaml.v3"
 )
 
 // CustomData represents custom data that can be added to events
+// This follows the CDEvents spec: https://github.com/cdevents/spec/blob/v0.4.1/spec.md#cdevents-custom-data
 type CustomData struct {
-	Data map[string]interface{} `json:"data,omitempty" yaml:"data,omitempty"`
-	Links []CustomLink `json:"links,omitempty" yaml:"links,omitempty"`
-	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
-	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
-}
-
-// CustomLink represents a custom link that can be added to events
-type CustomLink struct {
-	Name string `json:"name"`
-	URL string `json:"url"`
-	Type string `json:"type,omitempty"`
+	Data interface{} `json:"customData,omitempty"`
+	ContentType string `json:"customDataContentType,omitempty"`
 }
 
 // EventFactory creates CDEvents with common functionality
@@ -362,42 +352,11 @@ func (ef *EventFactory) CreateTestEvent(eventType, testID, testName, outcome, er
 }
 
 // applyCustomData applies custom data to a CDEvent
+// Note: The current CDEvents SDK v0.4.1 doesn't support direct custom data injection,
+// so we handle custom data in the output formatters instead.
 func (ef *EventFactory) applyCustomData(event api.CDEvent, customData *CustomData) {
-	if customData == nil {
-		return
-	}
-
-	// Apply custom data to the event's custom data extension
-	if customData.Data != nil {
-		if customEvent, ok := event.(interface {
-			SetCustomData(map[string]interface{})
-		}); ok {
-			customEvent.SetCustomData(customData.Data)
-		}
-	}
-
-	// Apply labels and annotations as custom data
-	if len(customData.Labels) > 0 || len(customData.Annotations) > 0 {
-		if customEvent, ok := event.(interface {
-			SetCustomDataEntry(string, interface{})
-		}); ok {
-			if len(customData.Labels) > 0 {
-				customEvent.SetCustomDataEntry("labels", customData.Labels)
-			}
-			if len(customData.Annotations) > 0 {
-				customEvent.SetCustomDataEntry("annotations", customData.Annotations)
-			}
-		}
-	}
-
-	// Apply custom links
-	if len(customData.Links) > 0 {
-		if customEvent, ok := event.(interface {
-			SetCustomDataEntry(string, interface{})
-		}); ok {
-			customEvent.SetCustomDataEntry("links", customData.Links)
-		}
-	}
+	// Custom data is now handled in the output formatters
+	// This function is kept for future SDK versions that may support direct custom data
 }
 
 // ParseCustomDataFromJSON parses custom data from JSON string
@@ -406,77 +365,15 @@ func ParseCustomDataFromJSON(jsonData string) (*CustomData, error) {
 		return nil, nil
 	}
 
-	var customData CustomData
-	if err := json.Unmarshal([]byte(jsonData), &customData); err != nil {
+	// Parse the JSON data into a generic interface{}
+	var data interface{}
+	if err := json.Unmarshal([]byte(jsonData), &data); err != nil {
 		return nil, fmt.Errorf("failed to parse custom data JSON: %w", err)
 	}
 
-	return &customData, nil
+	return &CustomData{
+		Data: data,
+		ContentType: "application/json",
+	}, nil
 }
 
-// ParseCustomDataFromYAML parses custom data from YAML string
-func ParseCustomDataFromYAML(yamlData string) (*CustomData, error) {
-	if yamlData == "" {
-		return nil, nil
-	}
-
-	var customData CustomData
-	if err := yaml.Unmarshal([]byte(yamlData), &customData); err != nil {
-		return nil, fmt.Errorf("failed to parse custom data YAML: %w", err)
-	}
-
-	return &customData, nil
-}
-
-// ParseCustomDataFromKeyValue parses custom data from key=value pairs
-func ParseCustomDataFromKeyValue(keyValues []string) (*CustomData, error) {
-	if len(keyValues) == 0 {
-		return nil, nil
-	}
-
-	customData := &CustomData{
-		Data: make(map[string]interface{}),
-	}
-
-	for _, kv := range keyValues {
-		parts := strings.SplitN(kv, "=", 2)
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid key=value format: %s", kv)
-		}
-
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-
-		// Try to parse as JSON first
-		var jsonValue interface{}
-		if err := json.Unmarshal([]byte(value), &jsonValue); err == nil {
-			customData.Data[key] = jsonValue
-		} else {
-			// Fallback to string value
-			customData.Data[key] = value
-		}
-	}
-
-	return customData, nil
-}
-
-// ParseLabelsFromKeyValue parses labels from key=value pairs
-func ParseLabelsFromKeyValue(keyValues []string) (map[string]string, error) {
-	if len(keyValues) == 0 {
-		return nil, nil
-	}
-
-	labels := make(map[string]string)
-	for _, kv := range keyValues {
-		parts := strings.SplitN(kv, "=", 2)
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid key=value format: %s", kv)
-		}
-
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-		labels[key] = value
-	}
-
-	return labels, nil
-}

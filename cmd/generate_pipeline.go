@@ -35,7 +35,7 @@ var generatePipelineCmd = &cobra.Command{
 		}
 
 		format := cmd.Flag("output").Value.String()
-		return outputEvent(event, format)
+		return outputEventWithCustomData(event, customData, format)
 	},
 }
 

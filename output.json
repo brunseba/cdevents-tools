@@ -1,0 +1,18 @@
+{
+  "context": {
+    "version": "0.4.1",
+    "id": "7191871a-2fd5-4318-adbe-4b40037f43f5",
+    "source": "cdevents-cli/f9d6c0651056",
+    "type": "dev.cdevents.pipelinerun.started.0.2.0",
+    "timestamp": "2025-07-13T17:47:34.962688211Z"
+  },
+  "subject": {
+    "id": "test-123",
+    "source": "cdevents-cli/f9d6c0651056",
+    "type": "pipelineRun",
+    "content": {
+      "pipelineName": "test-pipeline",
+      "url": ""
+    }
+  }
+}

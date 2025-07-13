@@ -1,4 +1,21 @@
 services:
+  # Development service for testing
+  cdevents-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    image: cdevents-dev:latest
+    container_name: cdevents-dev
+    volumes:
+      - .:/app
+    working_dir: /app
+    entrypoint: ["sh"]
+    stdin_open: true
+    tty: true
+    networks:
+      - cdevents-network
+
   cdevents-cli:
     build:
       context: .

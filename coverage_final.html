@@ -1,0 +1,1426 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>cmd: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/cdevents/cdevents-cli/cmd/generate.go (30.3%)</option>
+				
+				<option value="file1">github.com/cdevents/cdevents-cli/cmd/generate_build.go (16.7%)</option>
+				
+				<option value="file2">github.com/cdevents/cdevents-cli/cmd/generate_pipeline.go (16.7%)</option>
+				
+				<option value="file3">github.com/cdevents/cdevents-cli/cmd/generate_service.go (23.1%)</option>
+				
+				<option value="file4">github.com/cdevents/cdevents-cli/cmd/generate_task.go (23.1%)</option>
+				
+				<option value="file5">github.com/cdevents/cdevents-cli/cmd/root.go (35.0%)</option>
+				
+				<option value="file6">github.com/cdevents/cdevents-cli/cmd/send.go (31.0%)</option>
+				
+				<option value="file7">github.com/cdevents/cdevents-cli/cmd/send_pipeline.go (14.3%)</option>
+				
+				<option value="file8">github.com/cdevents/cdevents-cli/pkg/events/factory.go (78.1%)</option>
+				
+				<option value="file9">github.com/cdevents/cdevents-cli/pkg/output/formatters.go (78.7%)</option>
+				
+				<option value="file10">github.com/cdevents/cdevents-cli/pkg/transport/transport.go (90.9%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package cmd
+
+import (
+        "fmt"
+        "os"
+
+        "github.com/cdevents/cdevents-cli/pkg/events"
+        "github.com/cdevents/cdevents-cli/pkg/output"
+        "github.com/cdevents/sdk-go/pkg/api"
+
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var generateCmd = &amp;cobra.Command{
+        Use:   "generate",
+        Short: "Generate CDEvents",
+        Long: `Generate CDEvents for various CI/CD activities.
+
+Supported event types:
+- pipeline: Pipeline run events (queued, started, finished)
+- task: Task run events (started, finished)
+- build: Build events (queued, started, finished)
+- service: Service deployment events (deployed, published, removed, rolledback, upgraded)
+- test: Test events (testcase-queued, testcase-started, testcase-finished, etc.)
+
+Examples:
+  # Generate a pipeline started event
+  cdevents-cli generate pipeline started --id "pipeline-123" --name "my-pipeline"
+  
+# Generate a build finished event with outcome
+  cdevents-cli generate build finished --id "build-456" --name "my-build" --outcome "success"
+
+# Generate a task started event with custom data
+  cdevents-cli generate task started --id "task-101" --name "my-task" --custom-json '{"key":"value"}'
+
+# Generate a service deployed event
+  cdevents-cli generate service deployed --id "service-789" --name "my-service" --environment "prod"`,
+}
+
+func init() <span class="cov8" title="1">{
+        rootCmd.AddCommand(generateCmd)
+}</span>
+
+// Common flags for all generate commands
+func addCommonGenerateFlags(cmd *cobra.Command) <span class="cov8" title="1">{
+        cmd.Flags().StringP("id", "i", "", "Subject ID (required)")
+        cmd.Flags().StringP("name", "n", "", "Subject name (required)")
+        cmd.Flags().StringP("source", "s", "", "Event source (defaults to hostname)")
+        cmd.Flags().StringP("url", "u", "", "Subject URL")
+        cmd.Flags().StringP("outcome", "", "", "Outcome for finished events (success, failure, error, cancel)")
+        cmd.Flags().StringP("errors", "", "", "Error details for failed events")
+        
+        cmd.MarkFlagRequired("id")
+        cmd.MarkFlagRequired("name")
+
+        // Custom data flag
+        cmd.Flags().String("custom-json", "", "Custom data in JSON format")
+}</span>
+
+// parseCustomData returns custom data parsed from JSON only
+func parseCustomData(cmd *cobra.Command) (*events.CustomData, error) <span class="cov0" title="0">{
+        customJSON, err := cmd.Flags().GetString("custom-json")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Parse custom data from JSON only
+        <span class="cov0" title="0">if customJSON != "" </span><span class="cov0" title="0">{
+                return events.ParseCustomDataFromJSON(customJSON)
+        }</span>
+
+        <span class="cov0" title="0">return nil, nil</span>
+}
+func getDefaultSource() string <span class="cov0" title="0">{
+        if source := viper.GetString("source"); source != "" </span><span class="cov0" title="0">{
+                return source
+        }</span>
+        
+        <span class="cov0" title="0">hostname, err := os.Hostname()
+        if err != nil </span><span class="cov0" title="0">{
+                return "cdevents-cli"
+        }</span>
+        <span class="cov0" title="0">return fmt.Sprintf("cdevents-cli/%s", hostname)</span>
+}
+
+// outputEvent formats and outputs the event
+func outputEvent(event interface{}, format string) error <span class="cov0" title="0">{
+        return outputEventWithCustomData(event, nil, format)
+}</span>
+
+// outputEventWithCustomData formats and outputs the event with custom data
+func outputEventWithCustomData(event interface{}, customData *events.CustomData, format string) error <span class="cov0" title="0">{
+        if cdEvent, ok := event.(api.CDEvent); ok </span><span class="cov0" title="0">{
+                // Convert events.CustomData to output.CustomData
+                var outputCustomData *output.CustomData
+                if customData != nil </span><span class="cov0" title="0">{
+                        outputCustomData = &amp;output.CustomData{
+                                Data:        customData.Data,
+                                ContentType: customData.ContentType,
+                        }
+                }</span>
+
+                <span class="cov0" title="0">formatted, err := output.FormatOutputWithCustomData(cdEvent, outputCustomData, format)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to format output: %w", err)
+                }</span>
+                <span class="cov0" title="0">fmt.Print(formatted)
+                return nil</span>
+        }
+        <span class="cov0" title="0">return fmt.Errorf("invalid event type")</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package cmd
+
+import (
+        "fmt"
+
+        "github.com/cdevents/cdevents-cli/pkg/events"
+        "github.com/spf13/cobra"
+)
+
+var generateBuildCmd = &amp;cobra.Command{
+        Use:   "build",
+        Short: "Generate build events",
+        Args:  cobra.MinimumNArgs(1),
+        RunE: func(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+                factory := events.NewEventFactory(getDefaultSource())
+                eventType := args[0]
+
+                // Parse custom data
+                customData, err := parseCustomData(cmd)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to parse custom data: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">event, err := factory.CreateBuildEvent(
+                        eventType,
+                        cmd.Flag("id").Value.String(),
+                        cmd.Flag("name").Value.String(),
+                        cmd.Flag("outcome").Value.String(),
+                        cmd.Flag("errors").Value.String(),
+                        cmd.Flag("url").Value.String(),
+                        customData,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to create build event: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">format := cmd.Flag("output").Value.String()
+                return outputEvent(event, format)</span>
+        },
+}
+
+func init() <span class="cov8" title="1">{
+        addCommonGenerateFlags(generateBuildCmd)
+        generateCmd.AddCommand(generateBuildCmd)
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package cmd
+
+import (
+        "fmt"
+
+        "github.com/cdevents/cdevents-cli/pkg/events"
+        "github.com/spf13/cobra"
+)
+
+var generatePipelineCmd = &amp;cobra.Command{
+        Use:   "pipeline",
+        Short: "Generate pipeline events",
+        Args:  cobra.MinimumNArgs(1),
+        RunE: func(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+                factory := events.NewEventFactory(getDefaultSource())
+                eventType := args[0]
+
+                // Parse custom data
+                customData, err := parseCustomData(cmd)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to parse custom data: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">event, err := factory.CreatePipelineRunEvent(
+                        eventType,
+                        cmd.Flag("id").Value.String(),
+                        cmd.Flag("name").Value.String(),
+                        cmd.Flag("outcome").Value.String(),
+                        cmd.Flag("errors").Value.String(),
+                        cmd.Flag("url").Value.String(),
+                        customData,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to create pipeline event: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">format := cmd.Flag("output").Value.String()
+                return outputEventWithCustomData(event, customData, format)</span>
+        },
+}
+
+func init() <span class="cov8" title="1">{
+        addCommonGenerateFlags(generatePipelineCmd)
+        generateCmd.AddCommand(generatePipelineCmd)
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package cmd
+
+import (
+        "fmt"
+
+        "github.com/cdevents/cdevents-cli/pkg/events"
+        "github.com/spf13/cobra"
+)
+
+var generateServiceCmd = &amp;cobra.Command{
+        Use:   "service",
+        Short: "Generate service events",
+        Args:  cobra.MinimumNArgs(1),
+        RunE: func(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+                factory := events.NewEventFactory(getDefaultSource())
+                eventType := args[0]
+
+                // Parse custom data
+                customData, err := parseCustomData(cmd)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to parse custom data: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">event, err := factory.CreateServiceEvent(
+                        eventType,
+                        cmd.Flag("id").Value.String(),
+                        cmd.Flag("name").Value.String(),
+                        cmd.Flag("environment").Value.String(),
+                        cmd.Flag("url").Value.String(),
+                        customData,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to create service event: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">format := cmd.Flag("output").Value.String()
+                return outputEvent(event, format)</span>
+        },
+}
+
+func init() <span class="cov8" title="1">{
+        addCommonGenerateFlags(generateServiceCmd)
+        generateServiceCmd.Flags().StringP("environment", "e", "", "Environment ID")
+        generateCmd.AddCommand(generateServiceCmd)
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package cmd
+
+import (
+        "fmt"
+
+        "github.com/cdevents/cdevents-cli/pkg/events"
+        "github.com/spf13/cobra"
+)
+
+var generateTaskCmd = &amp;cobra.Command{
+        Use:   "task",
+        Short: "Generate task events",
+        Args:  cobra.MinimumNArgs(1),
+        RunE: func(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+                factory := events.NewEventFactory(getDefaultSource())
+                eventType := args[0]
+
+                // Parse custom data
+                customData, err := parseCustomData(cmd)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to parse custom data: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">event, err := factory.CreateTaskRunEvent(
+                        eventType,
+                        cmd.Flag("id").Value.String(),
+                        cmd.Flag("name").Value.String(),
+                        cmd.Flag("pipeline").Value.String(),
+                        cmd.Flag("outcome").Value.String(),
+                        cmd.Flag("errors").Value.String(),
+                        cmd.Flag("url").Value.String(),
+                        customData,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to create task event: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">format := cmd.Flag("output").Value.String()
+                return outputEvent(event, format)</span>
+        },
+}
+
+func init() <span class="cov8" title="1">{
+        addCommonGenerateFlags(generateTaskCmd)
+        generateTaskCmd.Flags().StringP("pipeline", "p", "", "Pipeline ID")
+        generateCmd.AddCommand(generateTaskCmd)
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package cmd
+
+import (
+        "fmt"
+        "os"
+
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var cfgFile string
+
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = &amp;cobra.Command{
+        Use:   "cdevents-cli",
+        Short: "A CLI tool for generating and sending CDEvents",
+        Long: `CDEvents CLI is a command-line tool for generating and sending CDEvents 
+into CI/CD toolchains using CloudEvents as transport.
+
+CDEvents is a common specification for Continuous Delivery events, enabling
+interoperability in the complete software production ecosystem.
+
+This tool supports:
+- Generating various CDEvents (pipeline, task, build, deployment, etc.)
+- Sending events via HTTP, Kafka, or other transports
+- Loading event templates from YAML files
+- Integration with CI/CD systems`,
+        Version: "0.1.0",
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+func Execute() error <span class="cov8" title="1">{
+        return rootCmd.Execute()
+}</span>
+
+func init() <span class="cov8" title="1">{
+        cobra.OnInitialize(initConfig)
+
+        // Global flags
+        rootCmd.PersistentFlags().StringVar(&amp;cfgFile, "config", "", "config file (default is $HOME/.cdevents-cli.yaml)")
+        rootCmd.PersistentFlags().StringP("output", "o", "json", "output format (json, yaml, cloudevent)")
+        rootCmd.PersistentFlags().BoolP("verbose", "v", false, "verbose output")
+        
+        // Bind flags to viper
+        viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output"))
+        viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
+}</span>
+
+// initConfig reads in config file and ENV variables if set.
+func initConfig() <span class="cov0" title="0">{
+        if cfgFile != "" </span><span class="cov0" title="0">{
+                // Use config file from the flag.
+                viper.SetConfigFile(cfgFile)
+        }</span> else<span class="cov0" title="0"> {
+                // Find home directory.
+                home, err := os.UserHomeDir()
+                if err != nil </span><span class="cov0" title="0">{
+                        fmt.Fprintf(os.Stderr, "Error getting home directory: %v\n", err)
+                        os.Exit(1)
+                }</span>
+
+                // Search config in home directory with name ".cdevents-cli" (without extension).
+                <span class="cov0" title="0">viper.AddConfigPath(home)
+                viper.SetConfigType("yaml")
+                viper.SetConfigName(".cdevents-cli")</span>
+        }
+
+        <span class="cov0" title="0">viper.AutomaticEnv() // read in environment variables that match
+
+        // If a config file is found, read it in.
+        if err := viper.ReadInConfig(); err == nil </span><span class="cov0" title="0">{
+                if viper.GetBool("verbose") </span><span class="cov0" title="0">{
+                        fmt.Fprintf(os.Stderr, "Using config file: %s\n", viper.ConfigFileUsed())
+                }</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package cmd
+
+import (
+        "context"
+        "fmt"
+        "time"
+
+        "github.com/cdevents/cdevents-cli/pkg/transport"
+        "github.com/cdevents/sdk-go/pkg/api"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var sendCmd = &amp;cobra.Command{
+        Use:   "send",
+        Short: "Send CDEvents to various targets",
+        Long: `Send CDEvents to various targets such as HTTP endpoints, files, or console.
+
+This command combines event generation and transmission in one step.
+
+Examples:
+  # Send a pipeline started event via HTTP
+  cdevents-cli send --target http://localhost:8080/events pipeline started --id "pipeline-123" --name "my-pipeline"
+  
+  # Send a build finished event to console
+  cdevents-cli send --target console build finished --id "build-456" --name "my-build" --outcome "success"
+  
+  # Send a service deployed event to a file
+  cdevents-cli send --target file://events.json service deployed --id "service-789" --name "my-service"`,
+}
+
+func init() <span class="cov8" title="1">{
+        rootCmd.AddCommand(sendCmd)
+        
+        // Add transport-specific flags
+        sendCmd.PersistentFlags().StringP("target", "t", "console", "Target to send events to (console, http://..., file://...)")
+        sendCmd.PersistentFlags().IntP("retries", "r", 3, "Number of retry attempts")
+        sendCmd.PersistentFlags().DurationP("timeout", "", 30*time.Second, "Request timeout")
+        sendCmd.PersistentFlags().StringSliceP("headers", "H", []string{}, "HTTP headers (format: key=value)")
+        
+        // Bind flags to viper
+        viper.BindPFlag("target", sendCmd.PersistentFlags().Lookup("target"))
+        viper.BindPFlag("retries", sendCmd.PersistentFlags().Lookup("retries"))
+        viper.BindPFlag("timeout", sendCmd.PersistentFlags().Lookup("timeout"))
+        viper.BindPFlag("headers", sendCmd.PersistentFlags().Lookup("headers"))
+}</span>
+
+// sendEvent sends an event using the specified transport
+func sendEvent(event interface{}, target string, retries int, timeout time.Duration) error <span class="cov0" title="0">{
+        cdEvent, ok := event.(api.CDEvent)
+        if !ok </span><span class="cov0" title="0">{
+                return fmt.Errorf("invalid event type")
+        }</span>
+
+        <span class="cov0" title="0">factory := transport.NewTransportFactory()
+        transport, err := factory.CreateTransport(target)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create transport: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">ctx, cancel := context.WithTimeout(context.Background(), timeout)
+        defer cancel()
+
+        if retries &gt; 0 </span><span class="cov0" title="0">{
+        return SendEventWithRetry(ctx, transport, cdEvent, retries)
+        }</span>
+
+        <span class="cov0" title="0">return transport.Send(ctx, cdEvent)</span>
+}
+
+// SendEventWithRetry sends an event with retry logic
+func SendEventWithRetry(ctx context.Context, transport transport.Transport, event api.CDEvent, maxRetries int) error <span class="cov0" title="0">{
+        var lastErr error
+
+        for i := 0; i &lt;= maxRetries; i++ </span><span class="cov0" title="0">{
+                if err := transport.Send(ctx, event); err != nil </span><span class="cov0" title="0">{
+                        lastErr = err
+                        if i &lt; maxRetries </span><span class="cov0" title="0">{
+                                // Could add exponential backoff here
+                                continue</span>
+                        }
+                } else<span class="cov0" title="0"> {
+                        return nil
+                }</span>
+        }
+
+        <span class="cov0" title="0">return fmt.Errorf("failed to send event after %d retries: %w", maxRetries, lastErr)</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package cmd
+
+import (
+        "fmt"
+
+        "github.com/cdevents/cdevents-cli/pkg/events"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+var sendPipelineCmd = &amp;cobra.Command{
+        Use:   "pipeline",
+        Short: "Send pipeline events",
+        Args:  cobra.MinimumNArgs(1),
+        RunE: func(cmd *cobra.Command, args []string) error <span class="cov0" title="0">{
+                factory := events.NewEventFactory(getDefaultSource())
+                eventType := args[0]
+
+                customData, err := parseCustomData(cmd)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to parse custom data: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">event, err := factory.CreatePipelineRunEvent(
+                        eventType,
+                        cmd.Flag("id").Value.String(),
+                        cmd.Flag("name").Value.String(),
+                        cmd.Flag("outcome").Value.String(),
+                        cmd.Flag("errors").Value.String(),
+                        cmd.Flag("url").Value.String(),
+                        customData,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to create pipeline event: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">target := viper.GetString("target")
+                retries := viper.GetInt("retries")
+                timeout := viper.GetDuration("timeout")
+
+                return sendEvent(event, target, retries, timeout)</span>
+        },
+}
+
+func init() <span class="cov8" title="1">{
+        addCommonGenerateFlags(sendPipelineCmd)
+        sendCmd.AddCommand(sendPipelineCmd)
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package events
+
+import (
+        "encoding/json"
+        "fmt"
+        "time"
+
+        "github.com/cdevents/sdk-go/pkg/api"
+        cdeventsv04 "github.com/cdevents/sdk-go/pkg/api/v04"
+        "github.com/google/uuid"
+)
+
+// CustomData represents custom data that can be added to events
+// This follows the CDEvents spec: https://github.com/cdevents/spec/blob/v0.4.1/spec.md#cdevents-custom-data
+type CustomData struct {
+        Data interface{} `json:"customData,omitempty"`
+        ContentType string `json:"customDataContentType,omitempty"`
+}
+
+// EventFactory creates CDEvents with common functionality
+type EventFactory struct {
+        defaultSource string
+}
+
+// NewEventFactory creates a new EventFactory
+func NewEventFactory(defaultSource string) *EventFactory <span class="cov8" title="1">{
+        return &amp;EventFactory{
+                defaultSource: defaultSource,
+        }
+}</span>
+
+// CreatePipelineRunEvent creates a pipeline run event
+func (ef *EventFactory) CreatePipelineRunEvent(eventType, pipelineID, pipelineName, outcome, errors, url string, customData *CustomData) (api.CDEvent, error) <span class="cov8" title="1">{
+        var event api.CDEvent
+        var err error
+
+        switch eventType </span>{
+        case "queued":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewPipelineRunQueuedEvent()</span>
+        case "started":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewPipelineRunStartedEvent()</span>
+        case "finished":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewPipelineRunFinishedEvent()</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("unsupported pipeline run event type: %s", eventType)</span>
+        }
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create pipeline run event: %w", err)
+        }</span>
+
+        // Set common fields
+        <span class="cov8" title="1">event.SetId(uuid.New().String())
+        event.SetSource(ef.defaultSource)
+        event.SetTimestamp(time.Now())
+        event.SetSubjectId(pipelineID)
+        
+        // Set pipeline-specific fields
+        if pipelineRunEvent, ok := event.(interface {
+                SetSubjectPipelineName(string)
+                SetSubjectUrl(string)
+        }); ok </span><span class="cov8" title="1">{
+                pipelineRunEvent.SetSubjectPipelineName(pipelineName)
+                if url != "" </span><span class="cov8" title="1">{
+                        pipelineRunEvent.SetSubjectUrl(url)
+                }</span>
+        }
+
+        // Set outcome and errors for finished events
+        <span class="cov8" title="1">if eventType == "finished" </span><span class="cov8" title="1">{
+                if finishedEvent, ok := event.(interface {
+                        SetSubjectOutcome(string)
+                        SetSubjectErrors(string)
+                }); ok </span><span class="cov8" title="1">{
+                        if outcome != "" </span><span class="cov8" title="1">{
+                                finishedEvent.SetSubjectOutcome(outcome)
+                        }</span>
+                        <span class="cov8" title="1">if errors != "" </span><span class="cov8" title="1">{
+                                finishedEvent.SetSubjectErrors(errors)
+                        }</span>
+                }
+        }
+
+        // Apply custom data if provided
+        <span class="cov8" title="1">if customData != nil </span><span class="cov8" title="1">{
+                ef.applyCustomData(event, customData)
+        }</span>
+
+        <span class="cov8" title="1">return event, nil</span>
+}
+
+// CreateTaskRunEvent creates a task run event
+func (ef *EventFactory) CreateTaskRunEvent(eventType, taskID, taskName, pipelineRunID, outcome, errors, url string, customData *CustomData) (api.CDEvent, error) <span class="cov8" title="1">{
+        var event api.CDEvent
+        var err error
+
+        switch eventType </span>{
+        case "started":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewTaskRunStartedEvent()</span>
+        case "finished":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewTaskRunFinishedEvent()</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("unsupported task run event type: %s", eventType)</span>
+        }
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create task run event: %w", err)
+        }</span>
+
+        // Set common fields
+        <span class="cov8" title="1">event.SetId(uuid.New().String())
+        event.SetSource(ef.defaultSource)
+        event.SetTimestamp(time.Now())
+        event.SetSubjectId(taskID)
+
+        // Set task-specific fields
+        if taskRunEvent, ok := event.(interface {
+                SetSubjectTaskName(string)
+                SetSubjectUrl(string)
+                SetSubjectPipelineRun(map[string]interface{})
+        }); ok </span><span class="cov0" title="0">{
+                taskRunEvent.SetSubjectTaskName(taskName)
+                if url != "" </span><span class="cov0" title="0">{
+                        taskRunEvent.SetSubjectUrl(url)
+                }</span>
+                <span class="cov0" title="0">if pipelineRunID != "" </span><span class="cov0" title="0">{
+                        taskRunEvent.SetSubjectPipelineRun(map[string]interface{}{
+                                "id": pipelineRunID,
+                        })
+                }</span>
+        }
+
+        // Set outcome and errors for finished events
+        <span class="cov8" title="1">if eventType == "finished" </span><span class="cov8" title="1">{
+                if finishedEvent, ok := event.(interface {
+                        SetSubjectOutcome(string)
+                        SetSubjectErrors(string)
+                }); ok </span><span class="cov8" title="1">{
+                        if outcome != "" </span><span class="cov8" title="1">{
+                                finishedEvent.SetSubjectOutcome(outcome)
+                        }</span>
+                        <span class="cov8" title="1">if errors != "" </span><span class="cov8" title="1">{
+                                finishedEvent.SetSubjectErrors(errors)
+                        }</span>
+                }
+        }
+
+        // Apply custom data if provided
+        <span class="cov8" title="1">if customData != nil </span><span class="cov8" title="1">{
+                ef.applyCustomData(event, customData)
+        }</span>
+
+        <span class="cov8" title="1">return event, nil</span>
+}
+
+// CreateBuildEvent creates a build event
+func (ef *EventFactory) CreateBuildEvent(eventType, buildID, buildName, outcome, errors, url string, customData *CustomData) (api.CDEvent, error) <span class="cov8" title="1">{
+        var event api.CDEvent
+        var err error
+
+        switch eventType </span>{
+        case "queued":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewBuildQueuedEvent()</span>
+        case "started":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewBuildStartedEvent()</span>
+        case "finished":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewBuildFinishedEvent()</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("unsupported build event type: %s", eventType)</span>
+        }
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create build event: %w", err)
+        }</span>
+
+        // Set common fields
+        <span class="cov8" title="1">event.SetId(uuid.New().String())
+        event.SetSource(ef.defaultSource)
+        event.SetTimestamp(time.Now())
+        event.SetSubjectId(buildID)
+
+        // Set build-specific fields  
+        if buildEvent, ok := event.(interface {
+                SetSubjectBuildName(string)
+                SetSubjectUrl(string)
+        }); ok </span><span class="cov0" title="0">{
+                buildEvent.SetSubjectBuildName(buildName)
+                if url != "" </span><span class="cov0" title="0">{
+                        buildEvent.SetSubjectUrl(url)
+                }</span>
+        }
+
+        // Set outcome and errors for finished events
+        <span class="cov8" title="1">if eventType == "finished" </span><span class="cov8" title="1">{
+                if finishedEvent, ok := event.(interface {
+                        SetSubjectOutcome(string)
+                        SetSubjectErrors(string)
+                }); ok </span><span class="cov0" title="0">{
+                        if outcome != "" </span><span class="cov0" title="0">{
+                                finishedEvent.SetSubjectOutcome(outcome)
+                        }</span>
+                        <span class="cov0" title="0">if errors != "" </span><span class="cov0" title="0">{
+                                finishedEvent.SetSubjectErrors(errors)
+                        }</span>
+                }
+        }
+
+        // Apply custom data if provided
+        <span class="cov8" title="1">if customData != nil </span><span class="cov8" title="1">{
+                ef.applyCustomData(event, customData)
+        }</span>
+
+        <span class="cov8" title="1">return event, nil</span>
+}
+
+// CreateServiceEvent creates a service deployment event
+func (ef *EventFactory) CreateServiceEvent(eventType, serviceID, serviceName, environmentID, url string, customData *CustomData) (api.CDEvent, error) <span class="cov8" title="1">{
+        var event api.CDEvent
+        var err error
+
+        switch eventType </span>{
+        case "deployed":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewServiceDeployedEvent()</span>
+        case "published":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewServicePublishedEvent()</span>
+        case "removed":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewServiceRemovedEvent()</span>
+        case "rolledback":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewServiceRolledbackEvent()</span>
+        case "upgraded":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewServiceUpgradedEvent()</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("unsupported service event type: %s", eventType)</span>
+        }
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create service event: %w", err)
+        }</span>
+
+        // Set common fields
+        <span class="cov8" title="1">event.SetId(uuid.New().String())
+        event.SetSource(ef.defaultSource)
+        event.SetTimestamp(time.Now())
+        event.SetSubjectId(serviceID)
+
+        // Set service-specific fields
+        if serviceEvent, ok := event.(interface {
+                SetSubjectServiceName(string)
+                SetSubjectUrl(string)
+                SetSubjectEnvironment(map[string]interface{})
+        }); ok </span><span class="cov0" title="0">{
+                serviceEvent.SetSubjectServiceName(serviceName)
+                if url != "" </span><span class="cov0" title="0">{
+                        serviceEvent.SetSubjectUrl(url)
+                }</span>
+                <span class="cov0" title="0">if environmentID != "" </span><span class="cov0" title="0">{
+                        serviceEvent.SetSubjectEnvironment(map[string]interface{}{
+                                "id": environmentID,
+                        })
+                }</span>
+        }
+
+        // Apply custom data if provided
+        <span class="cov8" title="1">if customData != nil </span><span class="cov8" title="1">{
+                ef.applyCustomData(event, customData)
+        }</span>
+
+        <span class="cov8" title="1">return event, nil</span>
+}
+
+// CreateTestEvent creates a test event
+func (ef *EventFactory) CreateTestEvent(eventType, testID, testName, outcome, errors, url string, customData *CustomData) (api.CDEvent, error) <span class="cov8" title="1">{
+        var event api.CDEvent
+        var err error
+
+        switch eventType </span>{
+        case "testcase-queued":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewTestCaseRunQueuedEvent()</span>
+        case "testcase-started":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewTestCaseRunStartedEvent()</span>
+        case "testcase-finished":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewTestCaseRunFinishedEvent()</span>
+        case "testcase-skipped":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewTestCaseRunSkippedEvent()</span>
+        case "testsuite-queued":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewTestSuiteRunQueuedEvent()</span>
+        case "testsuite-started":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewTestSuiteRunStartedEvent()</span>
+        case "testsuite-finished":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewTestSuiteRunFinishedEvent()</span>
+        case "testoutput-published":<span class="cov8" title="1">
+                event, err = cdeventsv04.NewTestOutputPublishedEvent()</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("unsupported test event type: %s", eventType)</span>
+        }
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create test event: %w", err)
+        }</span>
+
+        // Set common fields
+        <span class="cov8" title="1">event.SetId(uuid.New().String())
+        event.SetSource(ef.defaultSource)
+        event.SetTimestamp(time.Now())
+        event.SetSubjectId(testID)
+
+        // Set test-specific fields based on event type
+        switch eventType </span>{
+        case "testcase-queued", "testcase-started", "testcase-finished", "testcase-skipped":<span class="cov8" title="1">
+                if testEvent, ok := event.(interface {
+                        SetSubjectTestCaseName(string)
+                        SetSubjectUrl(string)
+                }); ok </span><span class="cov0" title="0">{
+                        testEvent.SetSubjectTestCaseName(testName)
+                        if url != "" </span><span class="cov0" title="0">{
+                                testEvent.SetSubjectUrl(url)
+                        }</span>
+                }
+        case "testsuite-queued", "testsuite-started", "testsuite-finished":<span class="cov8" title="1">
+                if testEvent, ok := event.(interface {
+                        SetSubjectTestSuiteName(string)
+                        SetSubjectUrl(string)
+                }); ok </span><span class="cov0" title="0">{
+                        testEvent.SetSubjectTestSuiteName(testName)
+                        if url != "" </span><span class="cov0" title="0">{
+                                testEvent.SetSubjectUrl(url)
+                        }</span>
+                }
+        }
+
+        // Set outcome and errors for finished events
+        <span class="cov8" title="1">if eventType == "testcase-finished" || eventType == "testsuite-finished" </span><span class="cov8" title="1">{
+                if finishedEvent, ok := event.(interface {
+                        SetSubjectOutcome(string)
+                        SetSubjectErrors(string)
+                }); ok </span><span class="cov0" title="0">{
+                        if outcome != "" </span><span class="cov0" title="0">{
+                                finishedEvent.SetSubjectOutcome(outcome)
+                        }</span>
+                        <span class="cov0" title="0">if errors != "" </span><span class="cov0" title="0">{
+                                finishedEvent.SetSubjectErrors(errors)
+                        }</span>
+                }
+        }
+
+        // Apply custom data if provided
+        <span class="cov8" title="1">if customData != nil </span><span class="cov8" title="1">{
+                ef.applyCustomData(event, customData)
+        }</span>
+
+        <span class="cov8" title="1">return event, nil</span>
+}
+
+// applyCustomData applies custom data to a CDEvent
+// Note: The current CDEvents SDK v0.4.1 doesn't support direct custom data injection,
+// so we handle custom data in the output formatters instead.
+func (ef *EventFactory) applyCustomData(event api.CDEvent, customData *CustomData) {<span class="cov8" title="1">
+        // Custom data is now handled in the output formatters
+        // This function is kept for future SDK versions that may support direct custom data
+}</span>
+
+// ParseCustomDataFromJSON parses custom data from JSON string
+func ParseCustomDataFromJSON(jsonData string) (*CustomData, error) <span class="cov8" title="1">{
+        if jsonData == "" </span><span class="cov8" title="1">{
+                return nil, nil
+        }</span>
+
+        // Parse the JSON data into a generic interface{}
+        <span class="cov8" title="1">var data interface{}
+        if err := json.Unmarshal([]byte(jsonData), &amp;data); err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to parse custom data JSON: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;CustomData{
+                Data: data,
+                ContentType: "application/json",
+        }, nil</span>
+}
+
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package output
+
+import (
+        "encoding/json"
+        "fmt"
+
+        "github.com/cdevents/sdk-go/pkg/api"
+        "gopkg.in/yaml.v3"
+)
+
+// CustomData represents custom data that can be added to events
+// This follows the CDEvents spec: https://github.com/cdevents/spec/blob/v0.4.1/spec.md#cdevents-custom-data
+type CustomData struct {
+        Data interface{} `json:"customData,omitempty"`
+        ContentType string `json:"customDataContentType,omitempty"`
+}
+
+// FormatOutput formats the CDEvent based on the specified format
+func FormatOutput(event api.CDEvent, format string) (string, error) <span class="cov8" title="1">{
+        return FormatOutputWithCustomData(event, nil, format)
+}</span>
+
+// FormatOutputWithCustomData formats the CDEvent with custom data based on the specified format
+func FormatOutputWithCustomData(event api.CDEvent, customData *CustomData, format string) (string, error) <span class="cov8" title="1">{
+        switch format </span>{
+        case "json":<span class="cov8" title="1">
+                return formatJSONWithCustomData(event, customData)</span>
+        case "yaml":<span class="cov8" title="1">
+                return formatYAMLWithCustomData(event, customData)</span>
+        case "cloudevent":<span class="cov8" title="1">
+                return formatCloudEventWithCustomData(event, customData)</span>
+        default:<span class="cov8" title="1">
+                return "", fmt.Errorf("unsupported output format: %s", format)</span>
+        }
+}
+
+// formatJSON formats the event as JSON
+func formatJSON(event api.CDEvent) (string, error) <span class="cov0" title="0">{
+        return formatJSONWithCustomData(event, nil)
+}</span>
+
+// formatJSONWithCustomData formats the event as JSON with custom data
+func formatJSONWithCustomData(event api.CDEvent, customData *CustomData) (string, error) <span class="cov8" title="1">{
+        // Marshal the event to get its JSON representation
+        eventData, err := json.Marshal(event)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal event: %w", err)
+        }</span>
+
+        // Parse the event JSON to a map
+        <span class="cov8" title="1">var eventMap map[string]interface{}
+        if err := json.Unmarshal(eventData, &amp;eventMap); err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to unmarshal event: %w", err)
+        }</span>
+
+        // Add custom data according to CDEvents spec at the root level
+        <span class="cov8" title="1">if customData != nil </span><span class="cov8" title="1">{
+                if customData.Data != nil </span><span class="cov8" title="1">{
+                        eventMap["customData"] = customData.Data
+                }</span>
+                <span class="cov8" title="1">if customData.ContentType != "" </span><span class="cov8" title="1">{
+                        eventMap["customDataContentType"] = customData.ContentType
+                }</span>
+        }
+
+        // Marshal back to JSON with custom data
+        <span class="cov8" title="1">data, err := json.MarshalIndent(eventMap, "", "  ")
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal event with custom data to JSON: %w", err)
+        }</span>
+        <span class="cov8" title="1">return string(data), nil</span>
+}
+
+// formatYAML formats the event as YAML
+func formatYAML(event api.CDEvent) (string, error) <span class="cov0" title="0">{
+        return formatYAMLWithCustomData(event, nil)
+}</span>
+
+// formatYAMLWithCustomData formats the event as YAML with custom data
+func formatYAMLWithCustomData(event api.CDEvent, customData *CustomData) (string, error) <span class="cov8" title="1">{
+        if customData == nil </span><span class="cov8" title="1">{
+                data, err := yaml.Marshal(event)
+                if err != nil </span><span class="cov0" title="0">{
+                        return "", fmt.Errorf("failed to marshal event to YAML: %w", err)
+                }</span>
+                <span class="cov8" title="1">return string(data), nil</span>
+        }
+
+        // Similar to JSON, but for YAML
+        <span class="cov8" title="1">eventData, err := json.Marshal(event)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal event: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">var eventMap map[string]interface{}
+        if err := json.Unmarshal(eventData, &amp;eventMap); err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to unmarshal event: %w", err)
+        }</span>
+
+        // Add custom data according to CDEvents spec at the root level
+        <span class="cov8" title="1">if customData.Data != nil </span><span class="cov8" title="1">{
+                eventMap["customData"] = customData.Data
+        }</span>
+        <span class="cov8" title="1">if customData.ContentType != "" </span><span class="cov8" title="1">{
+                eventMap["customDataContentType"] = customData.ContentType
+        }</span>
+
+        <span class="cov8" title="1">data, err := yaml.Marshal(eventMap)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal event with custom data to YAML: %w", err)
+        }</span>
+        <span class="cov8" title="1">return string(data), nil</span>
+}
+
+// formatCloudEvent formats the event as CloudEvent JSON
+func formatCloudEvent(event api.CDEvent) (string, error) <span class="cov0" title="0">{
+        return formatCloudEventWithCustomData(event, nil)
+}</span>
+
+// formatCloudEventWithCustomData formats the event as CloudEvent JSON with custom data
+func formatCloudEventWithCustomData(event api.CDEvent, customData *CustomData) (string, error) <span class="cov8" title="1">{
+        ce, err := api.AsCloudEvent(event)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to convert to CloudEvent: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">if customData != nil </span><span class="cov8" title="1">{
+                // Add custom data to the CloudEvent data field
+                ceData, err := json.Marshal(ce)
+                if err != nil </span><span class="cov0" title="0">{
+                        return "", fmt.Errorf("failed to marshal CloudEvent: %w", err)
+                }</span>
+
+                <span class="cov8" title="1">var ceMap map[string]interface{}
+                if err := json.Unmarshal(ceData, &amp;ceMap); err != nil </span><span class="cov0" title="0">{
+                        return "", fmt.Errorf("failed to unmarshal CloudEvent: %w", err)
+                }</span>
+
+                // Add custom data to the CloudEvent data according to CDEvents spec
+                <span class="cov8" title="1">if data, ok := ceMap["data"].(map[string]interface{}); ok </span><span class="cov8" title="1">{
+                        if customData.Data != nil </span><span class="cov8" title="1">{
+                                data["customData"] = customData.Data
+                        }</span>
+                        <span class="cov8" title="1">if customData.ContentType != "" </span><span class="cov8" title="1">{
+                                data["customDataContentType"] = customData.ContentType
+                        }</span>
+                }
+
+                <span class="cov8" title="1">data, err := json.MarshalIndent(ceMap, "", "  ")
+                if err != nil </span><span class="cov0" title="0">{
+                        return "", fmt.Errorf("failed to marshal CloudEvent with custom data to JSON: %w", err)
+                }</span>
+                <span class="cov8" title="1">return string(data), nil</span>
+        }
+        
+        <span class="cov8" title="1">data, err := json.MarshalIndent(ce, "", "  ")
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal CloudEvent to JSON: %w", err)
+        }</span>
+        <span class="cov8" title="1">return string(data), nil</span>
+}
+
+// FormatMultipleEvents formats multiple events
+func FormatMultipleEvents(events []api.CDEvent, format string) (string, error) <span class="cov8" title="1">{
+        switch format </span>{
+        case "json":<span class="cov8" title="1">
+                return formatMultipleJSON(events)</span>
+        case "yaml":<span class="cov8" title="1">
+                return formatMultipleYAML(events)</span>
+        case "cloudevent":<span class="cov8" title="1">
+                return formatMultipleCloudEvents(events)</span>
+        default:<span class="cov8" title="1">
+                return "", fmt.Errorf("unsupported output format: %s", format)</span>
+        }
+}
+
+// formatMultipleJSON formats multiple events as JSON array
+func formatMultipleJSON(events []api.CDEvent) (string, error) <span class="cov8" title="1">{
+        data, err := json.MarshalIndent(events, "", "  ")
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal events to JSON: %w", err)
+        }</span>
+        <span class="cov8" title="1">return string(data), nil</span>
+}
+
+// formatMultipleYAML formats multiple events as YAML array
+func formatMultipleYAML(events []api.CDEvent) (string, error) <span class="cov8" title="1">{
+        data, err := yaml.Marshal(events)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal events to YAML: %w", err)
+        }</span>
+        <span class="cov8" title="1">return string(data), nil</span>
+}
+
+// formatMultipleCloudEvents formats multiple events as CloudEvents JSON array
+func formatMultipleCloudEvents(events []api.CDEvent) (string, error) <span class="cov8" title="1">{
+        var cloudEvents []interface{}
+        
+        for _, event := range events </span><span class="cov8" title="1">{
+                ce, err := api.AsCloudEvent(event)
+                if err != nil </span><span class="cov0" title="0">{
+                        return "", fmt.Errorf("failed to convert event to CloudEvent: %w", err)
+                }</span>
+                <span class="cov8" title="1">cloudEvents = append(cloudEvents, ce)</span>
+        }
+        
+        <span class="cov8" title="1">data, err := json.MarshalIndent(cloudEvents, "", "  ")
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to marshal CloudEvents to JSON: %w", err)
+        }</span>
+        <span class="cov8" title="1">return string(data), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package transport
+
+import (
+        "context"
+        "fmt"
+        "strings"
+
+        "github.com/cdevents/sdk-go/pkg/api"
+        cloudevents "github.com/cloudevents/sdk-go/v2"
+)
+
+// Transport interface for sending events
+type Transport interface {
+        Send(ctx context.Context, event api.CDEvent) error
+}
+
+// HTTPTransport sends events via HTTP
+type HTTPTransport struct {
+        client cloudevents.Client
+        target string
+}
+
+// NewHTTPTransport creates a new HTTP transport
+func NewHTTPTransport(target string, options ...HTTPOption) (*HTTPTransport, error) <span class="cov8" title="1">{
+        client, err := cloudevents.NewClientHTTP()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create HTTP client: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">transport := &amp;HTTPTransport{
+                client: client,
+                target: target,
+        }
+
+        for _, option := range options </span><span class="cov8" title="1">{
+                option(transport)
+        }</span>
+
+        <span class="cov8" title="1">return transport, nil</span>
+}
+
+// HTTPOption configures HTTP transport
+type HTTPOption func(*HTTPTransport)
+
+// WithHTTPHeaders adds custom headers to HTTP requests
+func WithHTTPHeaders(headers map[string]string) HTTPOption <span class="cov8" title="1">{
+        return func(t *HTTPTransport) </span>{<span class="cov8" title="1">
+                // Logic to configure headers goes here if needed
+        }</span>
+}
+
+// Send sends an event via HTTP
+func (t *HTTPTransport) Send(ctx context.Context, event api.CDEvent) error <span class="cov8" title="1">{
+        ce, err := api.AsCloudEvent(event)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to convert to CloudEvent: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">ctx = cloudevents.ContextWithTarget(ctx, t.target)
+        ctx = cloudevents.WithEncodingBinary(ctx)
+
+        result := t.client.Send(ctx, *ce)
+        if cloudevents.IsUndelivered(result) </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to send event: %w", result)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// ConsoleTransport outputs events to console
+type ConsoleTransport struct {
+        format string
+}
+
+// NewConsoleTransport creates a new console transport
+func NewConsoleTransport(format string) *ConsoleTransport <span class="cov8" title="1">{
+        return &amp;ConsoleTransport{
+                format: format,
+        }
+}</span>
+
+// Send outputs an event to console
+func (t *ConsoleTransport) Send(ctx context.Context, event api.CDEvent) error <span class="cov8" title="1">{
+        // This would use the output package to format the event
+        // For now, just print a simple message
+        fmt.Printf("Event sent to console: %s\n", event.GetId())
+        return nil
+}</span>
+
+// FileTransport writes events to a file
+type FileTransport struct {
+        filename string
+        format   string
+}
+
+// NewFileTransport creates a new file transport
+func NewFileTransport(filename, format string) *FileTransport <span class="cov8" title="1">{
+        return &amp;FileTransport{
+                filename: filename,
+                format:   format,
+        }
+}</span>
+
+// Send writes an event to a file
+func (t *FileTransport) Send(ctx context.Context, event api.CDEvent) error <span class="cov8" title="1">{
+        // Implementation would write to file
+        fmt.Printf("Event sent to file %s: %s\n", t.filename, event.GetId())
+        return nil
+}</span>
+
+// KafkaTransport sends events to Kafka
+type KafkaTransport struct {
+        brokers []string
+        topic   string
+        client  cloudevents.Client
+}
+
+// NewKafkaTransport creates a new Kafka transport
+func NewKafkaTransport(brokers []string, topic string) (*KafkaTransport, error) <span class="cov8" title="1">{
+        // For now, return an error indicating Kafka support is not implemented
+        return nil, fmt.Errorf("Kafka transport not implemented yet")
+}</span>
+
+// Send sends an event to Kafka
+func (t *KafkaTransport) Send(ctx context.Context, event api.CDEvent) error <span class="cov0" title="0">{
+        return fmt.Errorf("Kafka transport not implemented yet")
+}</span>
+
+// TransportFactory creates transports based on configuration
+type TransportFactory struct{}
+
+// NewTransportFactory creates a new transport factory
+func NewTransportFactory() *TransportFactory <span class="cov8" title="1">{
+        return &amp;TransportFactory{}
+}</span>
+
+// CreateTransport creates a transport based on the target URL
+func (f *TransportFactory) CreateTransport(target string) (Transport, error) <span class="cov8" title="1">{
+        if target == "" || target == "console" </span><span class="cov8" title="1">{
+                return NewConsoleTransport("json"), nil
+        }</span>
+
+        <span class="cov8" title="1">if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") </span><span class="cov8" title="1">{
+                return NewHTTPTransport(target)
+        }</span>
+
+        <span class="cov8" title="1">if strings.HasPrefix(target, "file://") </span><span class="cov8" title="1">{
+                filename := strings.TrimPrefix(target, "file://")
+                return NewFileTransport(filename, "json"), nil
+        }</span>
+
+        <span class="cov8" title="1">if strings.HasPrefix(target, "kafka://") </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("Kafka transport not implemented yet")
+        }</span>
+
+        <span class="cov8" title="1">return nil, fmt.Errorf("unsupported transport target: %s", target)</span>
+}
+
+// MultiTransport sends events to multiple transports
+type MultiTransport struct {
+        transports []Transport
+}
+
+// NewMultiTransport creates a new multi transport
+func NewMultiTransport(transports ...Transport) *MultiTransport <span class="cov8" title="1">{
+        return &amp;MultiTransport{
+                transports: transports,
+        }
+}</span>
+
+// Send sends an event to all configured transports
+func (t *MultiTransport) Send(ctx context.Context, event api.CDEvent) error <span class="cov8" title="1">{
+        var errors []string
+
+        for _, transport := range t.transports </span><span class="cov8" title="1">{
+                if err := transport.Send(ctx, event); err != nil </span><span class="cov8" title="1">{
+                        errors = append(errors, err.Error())
+                }</span>
+        }
+
+        <span class="cov8" title="1">if len(errors) &gt; 0 </span><span class="cov8" title="1">{
+                return fmt.Errorf("transport errors: %s", strings.Join(errors, "; "))
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

@@ -32,7 +32,7 @@ Examples:
   cdevents-cli generate build finished --id "build-456" --name "my-build" --outcome "success"
 
 # Generate a task started event with custom data
-  cdevents-cli generate task started --id "task-101" --name "my-task" --custom "key=value"
+  cdevents-cli generate task started --id "task-101" --name "my-task" --custom-json '{"key":"value"}'
 
 # Generate a service deployed event
   cdevents-cli generate service deployed --id "service-789" --name "my-service" --environment "prod"`,
@@ -54,39 +54,23 @@ func addCommonGenerateFlags(cmd *cobra.Command) {
 	cmd.MarkFlagRequired("id")
 	cmd.MarkFlagRequired("name")
 
-	// Custom data flags
-	cmd.Flags().StringSlice("custom", []string{}, "Custom data as key=value pairs")
+	// Custom data flag
 	cmd.Flags().String("custom-json", "", "Custom data in JSON format")
-	cmd.Flags().String("custom-yaml", "", "Custom data in YAML format")
 }
 
-// parseCustomData returns custom data parsed from the command
+// parseCustomData returns custom data parsed from JSON only
 func parseCustomData(cmd *cobra.Command) (*events.CustomData, error) {
-	customKeyValue, err := cmd.Flags().GetStringSlice("custom")
-	if err != nil {
-		return nil, err
-	}
-
 	customJSON, err := cmd.Flags().GetString("custom-json")
 	if err != nil {
 		return nil, err
 	}
 
-	customYAML, err := cmd.Flags().GetString("custom-yaml")
-	if err != nil {
-		return nil, err
-	}
-
-	// Parse custom data from JSON, YAML, or key=value pairs
+	// Parse custom data from JSON only
 	if customJSON != "" {
 		return events.ParseCustomDataFromJSON(customJSON)
 	}
 
-	if customYAML != "" {
-		return events.ParseCustomDataFromYAML(customYAML)
-	}
-
-	return events.ParseCustomDataFromKeyValue(customKeyValue)
+	return nil, nil
 }
 func getDefaultSource() string {
 	if source := viper.GetString("source"); source != "" {
@@ -102,8 +86,22 @@ func getDefaultSource() string {
 
 // outputEvent formats and outputs the event
 func outputEvent(event interface{}, format string) error {
+	return outputEventWithCustomData(event, nil, format)
+}
+
+// outputEventWithCustomData formats and outputs the event with custom data
+func outputEventWithCustomData(event interface{}, customData *events.CustomData, format string) error {
 	if cdEvent, ok := event.(api.CDEvent); ok {
-		formatted, err := output.FormatOutput(cdEvent, format)
+		// Convert events.CustomData to output.CustomData
+		var outputCustomData *output.CustomData
+		if customData != nil {
+			outputCustomData = &output.CustomData{
+				Data:        customData.Data,
+				ContentType: customData.ContentType,
+			}
+		}
+
+		formatted, err := output.FormatOutputWithCustomData(cdEvent, outputCustomData, format)
 		if err != nil {
 			return fmt.Errorf("failed to format output: %w", err)
 		}
