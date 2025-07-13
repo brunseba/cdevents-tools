@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cdevents/cdevents-cli/pkg/transport"
+	"github.com/brunseba/cdevents-tools/pkg/transport"
 	"github.com/cdevents/sdk-go/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

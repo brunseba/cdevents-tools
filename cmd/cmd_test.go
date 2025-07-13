@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cdevents/cdevents-cli/cmd"
-	"github.com/cdevents/cdevents-cli/pkg/events"
+	"github.com/brunseba/cdevents-tools/cmd"
+	"github.com/brunseba/cdevents-tools/pkg/events"
 	"github.com/cdevents/sdk-go/pkg/api"
 )
 

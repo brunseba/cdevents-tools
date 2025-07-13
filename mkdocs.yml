@@ -1,10 +1,10 @@
 site_name: CDEvents CLI
-site_description: A CLI tool for generating and sending CDEvents into CI/CD toolchains
-site_author: CDEvents Community
-site_url: https://github.com/cdevents/cdevents-cli
+site_description: A CLI tool for generating and sending CDEvents into CI/CD toolchains using CloudEvents as transport
+site_author: brunseba
+site_url: https://github.com/brunseba/cdevents-tools
 
-repo_name: cdevents/cdevents-cli
-repo_url: https://github.com/cdevents/cdevents-cli
+repo_name: brunseba/cdevents-tools
+repo_url: https://github.com/brunseba/cdevents-tools
 
 theme:
   name: material
@@ -57,6 +57,6 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/cdevents/cdevents-cli
-    - icon: fontawesome/brands/slack
-      link: https://cdeliveryfdn.slack.com/archives/C030SKZ0F4K
+      link: https://github.com/brunseba/cdevents-tools
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/brunseba

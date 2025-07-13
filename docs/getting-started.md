@@ -195,32 +195,254 @@ cdevents-cli generate test testsuite-finished --id "testsuite-1" --name "Integra
 
 ### Custom Data
 
-You can add custom data to events in multiple formats:
+You can add custom data to events using the `--custom-json` flag:
 
 ```bash
-# Using key=value pairs
-cdevents-cli generate pipeline started --id "pipeline-1" --name "My Pipeline" \
-  --custom "build_number=123" --custom "branch=main" --custom "commit=abc123"
-
 # Using JSON format
+cdevents-cli generate pipeline started --id "pipeline-1" --name "My Pipeline" \
+  --custom-json '{"data": {"build_number": 123, "branch": "main", "commit": "abc123"}, "labels": {"team": "backend"}}'
+
+# Build event with custom data
 cdevents-cli generate build finished --id "build-1" --name "Frontend Build" \
   --custom-json '{"data": {"duration": 120, "artifacts": ["app.js", "styles.css"]}, "labels": {"team": "frontend", "env": "prod"}}'
 
-# Using YAML format
+# Service deployment with custom data
 cdevents-cli generate service deployed --id "service-1" --name "API Service" \
-  --custom-yaml '
-data:
-  version: "1.2.3"
-  replicas: 3
-  health_check: "ok"
-labels:
-  team: "backend"
-  tier: "api"
-links:
-  - name: "deployment"
-    url: "https://k8s.example.com/deployment/api-service"
-    type: "kubernetes"
+  --custom-json '{
+    "data": {
+      "version": "1.2.3",
+      "replicas": 3,
+      "health_check": "ok"
+    },
+    "labels": {
+      "team": "backend",
+      "tier": "api"
+    },
+    "links": [
+      {
+        "name": "deployment",
+        "url": "https://k8s.example.com/deployment/api-service",
+        "type": "kubernetes"
+      }
+    ]
 '
+```
+
+## Quick Examples with Input/Output
+
+Here are some quick examples showing exact commands and their outputs:
+
+### Generate a Simple Pipeline Event
+
+**Command:**
+```bash
+cdevents-cli generate pipeline started --id "my-pipeline-1" --name "Backend Build"
+```
+
+**Output:**
+```json
+{
+  "context": {
+    "version": "0.4.1",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "source": "cdevents-cli/hostname",
+    "type": "dev.cdevents.pipelinerun.started.0.2.0",
+    "timestamp": "2024-01-15T14:30:00Z"
+  },
+  "subject": {
+    "id": "my-pipeline-1",
+    "source": "cdevents-cli/hostname",
+    "type": "pipelineRun",
+    "content": {
+      "pipelineName": "Backend Build",
+      "url": ""
+    }
+  }
+}
+```
+
+### Generate Event with Custom Data
+
+**Command:**
+```bash
+cdevents-cli generate build finished --id "build-456" --name "Frontend Build" \
+  --outcome "success" \
+  --custom-json '{
+    "data": {
+      "duration_seconds": 120,
+      "test_coverage": 85.5,
+      "artifact_size_mb": 12.3
+    },
+    "labels": {
+      "team": "frontend",
+      "environment": "staging"
+    }
+  }'
+```
+
+**Output:**
+```json
+{
+  "context": {
+    "version": "0.4.1",
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "source": "cdevents-cli/hostname",
+    "type": "dev.cdevents.build.finished.0.2.0",
+    "timestamp": "2024-01-15T14:32:00Z"
+  },
+  "subject": {
+    "id": "build-456",
+    "source": "cdevents-cli/hostname",
+    "type": "build",
+    "content": {
+      "outcome": "success",
+      "url": ""
+    }
+  },
+  "customData": {
+    "data": {
+      "duration_seconds": 120,
+      "test_coverage": 85.5,
+      "artifact_size_mb": 12.3
+    },
+    "labels": {
+      "team": "frontend",
+      "environment": "staging"
+    }
+  },
+  "customDataContentType": "application/json"
+}
+```
+
+### Generate Event in YAML Format
+
+**Command:**
+```bash
+cdevents-cli generate test testcase-finished --id "test-123" --name "Unit Tests" \
+  --outcome "success" \
+  --output yaml
+```
+
+**Output:**
+```yaml
+context:
+  version: "0.4.1"
+  id: "550e8400-e29b-41d4-a716-446655440002"
+  source: "cdevents-cli/hostname"
+  type: "dev.cdevents.testcaserun.finished.0.2.0"
+  timestamp: "2024-01-15T14:35:00Z"
+subject:
+  id: "test-123"
+  source: "cdevents-cli/hostname"
+  type: "testCaseRun"
+  content:
+    outcome: "success"
+    environment:
+      id: "default"
+      source: "cdevents-cli/hostname"
+    testCase:
+      id: "Unit Tests"
+      name: "Unit Tests"
+      type: "unit"
+      uri: ""
+```
+
+### Generate Event in CloudEvent Format
+
+**Command:**
+```bash
+cdevents-cli generate service deployed --id "service-789" --name "API Service" \
+  --environment "production" \
+  --output cloudevent
+```
+
+**Output:**
+```json
+{
+  "specversion": "1.0",
+  "id": "550e8400-e29b-41d4-a716-446655440003",
+  "source": "cdevents-cli/hostname",
+  "type": "dev.cdevents.service.deployed.0.2.0",
+  "subject": "service-789",
+  "time": "2024-01-15T14:37:00Z",
+  "datacontenttype": "application/json",
+  "data": {
+    "context": {
+      "version": "0.4.1",
+      "id": "550e8400-e29b-41d4-a716-446655440003",
+      "source": "cdevents-cli/hostname",
+      "type": "dev.cdevents.service.deployed.0.2.0",
+      "timestamp": "2024-01-15T14:37:00Z"
+    },
+    "subject": {
+      "id": "service-789",
+      "source": "cdevents-cli/hostname",
+      "type": "service",
+      "content": {
+        "artifactId": "",
+        "environment": {
+          "id": "production",
+          "source": "cdevents-cli/hostname",
+          "uri": ""
+        }
+      }
+    }
+  }
+}
+```
+
+### Send Event to Console
+
+**Command:**
+```bash
+cdevents-cli send pipeline finished --id "pipeline-final" --name "Deployment" \
+  --outcome "success" \
+  --source "ci-system"
+```
+
+**Output:**
+```
+Event sent to console: pipeline-final
+```
+
+### Send Event to File
+
+**Command:**
+```bash
+cdevents-cli send --target "file://my-events.json" \
+  task started --id "task-001" --name "Database Migration" \
+  --pipeline "deploy-pipeline"
+```
+
+**Output:**
+```
+Event sent to file my-events.json: task-001
+```
+
+**File Contents (my-events.json):**
+```json
+{
+  "context": {
+    "version": "0.4.1",
+    "id": "550e8400-e29b-41d4-a716-446655440004",
+    "source": "cdevents-cli/hostname",
+    "type": "dev.cdevents.taskrun.started.0.2.0",
+    "timestamp": "2024-01-15T14:40:00Z"
+  },
+  "subject": {
+    "id": "task-001",
+    "source": "cdevents-cli/hostname",
+    "type": "taskRun",
+    "content": {
+      "taskName": "Database Migration",
+      "pipelineRun": {
+        "id": "deploy-pipeline",
+        "source": "cdevents-cli/hostname"
+      },
+      "url": ""
+    }
+  }
+}
 ```
 
 ## Integration Examples

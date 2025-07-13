@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cdevents/cdevents-cli/cmd"
+	"github.com/brunseba/cdevents-tools/cmd"
 )
 
 func main() {

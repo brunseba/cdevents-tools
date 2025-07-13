@@ -1,9 +1,44 @@
 package events_test
 
 import (
+	"encoding/json"
 	"testing"
-	"github.com/cdevents/cdevents-cli/pkg/events"
+
+	"github.com/xeipuuv/gojsonschema"
+	"github.com/brunseba/cdevents-tools/pkg/events"
 )
+
+func TestValidateNewPipelineRunStartedEvent(t *testing.T) {
+	eventFactory := events.NewEventFactory("test-source")
+	customData := &events.CustomData{
+		Data: map[string]interface{}{"key": "value"},
+		ContentType: "application/json",
+	}
+	event, err := eventFactory.CreatePipelineRunEvent("started", "pipeline-123", "test-pipeline", "status", "", "https://example.com", customData)
+	if err != nil {
+		t.Fatalf("Failed to create event: %v", err)
+	}
+
+	eventBytes, err := json.Marshal(event)
+	if err != nil {
+		t.Fatalf("Failed to marshal event: %v", err)
+	}
+
+	schemaLoader := gojsonschema.NewReferenceLoader("file://./spec/schemas/pipelinerunstarted.json")
+	documentLoader := gojsonschema.NewBytesLoader(eventBytes)
+
+	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
+	if err != nil {
+		t.Fatalf("Schema validation error: %v", err)
+	}
+
+	if !result.Valid() {
+		t.Errorf("Event does not match schema:")
+		for _, desc := range result.Errors() {
+			t.Errorf("- %s\n", desc)
+		}
+	}
+}
 
 func TestNewEventFactory(t *testing.T) {
 	factory := events.NewEventFactory("test-source")

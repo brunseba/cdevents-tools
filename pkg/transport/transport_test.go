@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 	"github.com/cdevents/sdk-go/pkg/api"
-	"github.com/cdevents/cdevents-cli/pkg/transport"
+	"github.com/brunseba/cdevents-tools/pkg/transport"
 	cdeventsv04 "github.com/cdevents/sdk-go/pkg/api/v04"
 )
 

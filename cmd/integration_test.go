@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/cdevents/cdevents-cli/cmd"
+	"github.com/brunseba/cdevents-tools/cmd"
 )
 
 func TestExecuteFunction(t *testing.T) {

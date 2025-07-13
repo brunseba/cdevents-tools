@@ -23,7 +23,7 @@ services:
       platforms:
         - linux/amd64
         - linux/arm64
-    image: cdevents-cli:latest
+    image: brunseba/cdevents-tools:latest
     container_name: cdevents-cli
     volumes:
       - ./examples:/examples:ro

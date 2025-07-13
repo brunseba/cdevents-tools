@@ -5,7 +5,7 @@ import (
 	"testing"
 	"github.com/cdevents/sdk-go/pkg/api"
 	cdeventsv04 "github.com/cdevents/sdk-go/pkg/api/v04"
-	"github.com/cdevents/cdevents-cli/pkg/output"
+	"github.com/brunseba/cdevents-tools/pkg/output"
 )
 
 func TestFormatJSONWithCustomData(t *testing.T) {

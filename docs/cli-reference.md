@@ -42,9 +42,7 @@ cdevents-cli generate [event-type] [sub-command] [flags]
 | `--url` | `-u` | Subject URL | |
 | `--outcome` | | Outcome (success, failure, error, cancel) | |
 | `--errors` | | Error details | |
-| `--custom` | | Custom data as key=value pairs (repeatable) | |
 | `--custom-json` | | Custom data in JSON format | |
-| `--custom-yaml` | | Custom data in YAML format | |
 
 #### Pipeline Events
 
@@ -69,13 +67,9 @@ cdevents-cli generate pipeline finished --id "pipeline-123" --name "my-pipeline"
 # Generate pipeline finished event (failure)
 cdevents-cli generate pipeline finished --id "pipeline-123" --name "my-pipeline" --outcome "failure" --errors "Build step failed"
 
-# Generate pipeline with custom data
-cdevents-cli generate pipeline started --id "pipeline-123" --name "my-pipeline" \
-  --custom "build_number=456" --custom "branch=feature/new-api"
-
 # Generate pipeline with JSON custom data
 cdevents-cli generate pipeline finished --id "pipeline-123" --name "my-pipeline" \
-  --custom-json '{"data": {"duration": 300, "tests_passed": 150}, "labels": {"team": "backend"}}'
+  --custom-json '{"data": {"duration": 300, "tests_passed": 150, "build_number": 456, "branch": "feature/new-api"}, "labels": {"team": "backend"}}'
 ```
 
 #### Build Events
@@ -229,17 +223,7 @@ cdevents-cli send --target http://localhost:8080/events --retries 5 --timeout 60
 
 ## Custom Data
 
-CDEvents CLI supports adding custom data to events in multiple formats:
-
-### Key=Value Pairs
-
-```bash
-# Add simple key=value pairs
-cdevents-cli generate pipeline started --id "pipeline-123" --name "my-pipeline" \
-  --custom "build_number=456" \
-  --custom "branch=main" \
-  --custom "commit=abc123def456"
-```
+CDEvents CLI supports adding custom data to events in JSON format:
 
 ### JSON Format
 
@@ -268,34 +252,6 @@ cdevents-cli generate build finished --id "build-456" --name "my-build" \
       }
     ]
   }'
-```
-
-### YAML Format
-
-```bash
-# Add structured data in YAML format
-cdevents-cli generate service deployed --id "service-789" --name "api-service" \
-  --custom-yaml '
-data:
-  version: "1.2.3"
-  replicas: 3
-  health_check: "ok"
-  deployment_time: "2023-12-01T12:00:00Z"
-labels:
-  team: "backend"
-  tier: "api"
-  environment: "production"
-annotations:
-  kubernetes.io/deployment: "api-service-v1.2.3"
-  monitoring.enabled: "true"
-links:
-  - name: "deployment"
-    url: "https://k8s.example.com/deployment/api-service"
-    type: "kubernetes"
-  - name: "monitoring"
-    url: "https://grafana.example.com/dashboard/api-service"
-    type: "monitoring"
-'
 ```
 
 ### Custom Data Structure

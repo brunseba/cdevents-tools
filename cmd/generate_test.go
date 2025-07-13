@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/cdevents/cdevents-cli/pkg/events"
+	"github.com/brunseba/cdevents-tools/pkg/events"
 	"github.com/spf13/cobra"
 )
 

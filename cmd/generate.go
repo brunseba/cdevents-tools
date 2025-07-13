@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cdevents/cdevents-cli/pkg/events"
-	"github.com/cdevents/cdevents-cli/pkg/output"
+	"github.com/brunseba/cdevents-tools/pkg/events"
+	"github.com/brunseba/cdevents-tools/pkg/output"
 	"github.com/cdevents/sdk-go/pkg/api"
 
 	"github.com/spf13/cobra"

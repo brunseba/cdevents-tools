@@ -16,7 +16,8 @@ CDEvents CLI is a powerful tool designed to integrate with your CI/CD pipeline b
 - ✅ **Custom Data Support**: Add custom data, labels, annotations, and links to events
 - ✅ **Multiple Input Formats**: Support JSON, YAML, and key=value pairs for custom data
 - ✅ **Multiple Transports**: Send events via HTTP, console output, or file
-- ✅ **CloudEvents Compatible**: Full CloudEvents specification support
+- ✅ **CloudEvents Compatible**: Full CloudEvents v1.0 specification support with binary encoding
+- ✅ **Standard Compliance**: Follows CDEvents v0.4.1 and CloudEvents v1.0 standards
 - ✅ **Flexible Configuration**: Command-line flags and configuration files
 - ✅ **Docker Support**: Containerized deployment with multi-platform binaries
 - ✅ **Retry Logic**: Built-in retry mechanisms with configurable timeouts
@@ -47,8 +48,8 @@ docker run --rm cdevents-cli:latest send \
 
 ```bash
 # Clone the repository
-git clone https://github.com/cdevents/cdevents-cli.git
-cd cdevents-cli
+git clone https://github.com/brunseba/cdevents-tools.git
+cd cdevents-tools
 
 # Install dependencies
 go mod tidy
