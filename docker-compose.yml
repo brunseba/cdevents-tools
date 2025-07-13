@@ -1,0 +1,39 @@
+services:
+  cdevents-cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64
+    image: cdevents-cli:latest
+    container_name: cdevents-cli
+    volumes:
+      - ./examples:/examples:ro
+      - ./output:/output
+    environment:
+      - CDEVENTS_SOURCE=docker-container
+    networks:
+      - cdevents-network
+
+  # Example HTTP endpoint for testing
+  httpbin:
+    image: kennethreitz/httpbin:latest
+    container_name: httpbin
+    ports:
+      - "8080:80"
+    networks:
+      - cdevents-network
+
+  # Example CloudEvents receiver
+  cloudevents-receiver:
+    image: gcr.io/knative-samples/cloudevents-receiver:latest
+    container_name: cloudevents-receiver
+    ports:
+      - "8081:8080"
+    networks:
+      - cdevents-network
+
+networks:
+  cdevents-network:
+    driver: bridge

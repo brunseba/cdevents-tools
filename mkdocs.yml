@@ -1,0 +1,61 @@
+site_name: CDEvents CLI
+site_description: A CLI tool for generating and sending CDEvents into CI/CD toolchains
+site_author: CDEvents Community
+site_url: https://github.com/cdevents/cdevents-cli
+
+repo_name: cdevents/cdevents-cli
+repo_url: https://github.com/cdevents/cdevents-cli
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.annotate
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - CLI Reference: cli-reference.md
+  - Examples: examples.md
+  - Docker: docker.md
+  - Contributing: contributing.md
+
+plugins:
+  - search
+  - mkdocstrings
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/cdevents/cdevents-cli
+    - icon: fontawesome/brands/slack
+      link: https://cdeliveryfdn.slack.com/archives/C030SKZ0F4K
