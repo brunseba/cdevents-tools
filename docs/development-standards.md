@@ -12,10 +12,23 @@ This document outlines the development standards and practices used in the CDEve
 
 ### Code Style and Formatting
 - **Formatting**: Use `gofmt` for consistent code formatting
-- **Linting**: Use `go vet` for static code analysis
+- **Linting**: Use `golangci-lint` with modern linters for comprehensive static analysis
 - **Conventions**: Follow idiomatic Go conventions and best practices
 - **Documentation**: Use Go doc comments for all public APIs
 - **Error Handling**: Proper error handling with descriptive messages
+
+### Linting Configuration
+- **Tool**: `golangci-lint` v1.55.2 or later
+- **Modern Linters**: Use actively maintained linters (no deprecated ones)
+- **Key Linters**:
+  - `revive` (replaces deprecated `golint`)
+  - `unused` (replaces deprecated `deadcode`, `structcheck`, `varcheck`)
+  - `exportloopref` (replaces deprecated `scopelint`)
+  - `staticcheck` for advanced static analysis
+  - `govet` for Go compiler checks
+  - `errcheck` for error handling verification
+- **Deprecated Linters**: Avoided deprecated linters (`golint`, `deadcode`, `structcheck`, `varcheck`, `scopelint`, `interfacer`, `maligned`)
+- **Configuration**: Centralized in `.golangci.yml` with project-specific settings
 
 ### Architecture Standards
 - **Structure**: Clean architecture with separation of concerns
@@ -124,6 +137,22 @@ test: enforce code coverage for cmd package
 - **Static Analysis**: Run linting and security checks
 - **Build Verification**: Verify builds across supported platforms
 
+### Quality Metrics and Analysis
+- **Docker-based Analysis**: Use `Dockerfile.quality` for reproducible quality metrics
+- **Make Targets**: 
+  - `make quality-docker` - Run quality analysis in Docker
+  - `make quality-docs` - Generate and update quality documentation
+  - `make quality-extract` - Extract quality reports
+- **Quality Reports**: Automated generation of comprehensive quality reports
+- **Metrics Tracking**:
+  - Code coverage percentage and trends
+  - Cyclomatic complexity analysis
+  - Build and test execution times
+  - Binary size monitoring
+  - Linting issue tracking
+- **Quality Gates**: Automated quality gates with configurable thresholds
+- **Documentation Integration**: Quality reports automatically copied to documentation
+
 ## Security Standards
 
 ### Code Security
@@ -187,6 +216,14 @@ test: enforce code coverage for cmd package
 - **Profiling**: Use Go profiling tools for performance analysis
 - **Documentation**: MkDocs for documentation generation
 
+### Quality Analysis Tools
+- **golangci-lint**: Modern Go linter with multiple analyzers
+- **gocyclo**: Cyclomatic complexity analysis
+- **go cover**: Code coverage analysis and reporting
+- **Docker**: Containerized quality analysis for consistency
+- **Make**: Build automation for quality workflows
+- **bc**: Mathematical calculations for quality metrics
+
 ### CI/CD Tools
 - **Version Control**: Git with conventional commits
 - **Container Registry**: Docker Hub for image distribution
@@ -196,10 +233,15 @@ test: enforce code coverage for cmd package
 ## Monitoring and Metrics
 
 ### Code Quality Metrics
-- **Code Coverage**: Track and maintain high code coverage
-- **Cyclomatic Complexity**: Monitor code complexity
+- **Code Coverage**: Track and maintain high code coverage (current: 82.3%)
+- **Coverage Threshold**: Minimum 70% overall coverage required
+- **Cyclomatic Complexity**: Monitor code complexity (≤10 per function recommended)
+- **Build Performance**: Monitor build times (current: <1s)
+- **Test Performance**: Monitor test execution times (current: ~3s)
+- **Binary Size**: Track binary size (current: ~17MB)
+- **Linting Issues**: Track and resolve linting issues
 - **Technical Debt**: Regular refactoring to reduce technical debt
-- **Performance**: Monitor build times and execution performance
+- **Quality Reports**: Generate and review quality reports regularly
 
 ### Usage Metrics
 - **CLI Usage**: Track command usage patterns

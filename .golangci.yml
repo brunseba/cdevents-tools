@@ -10,12 +10,10 @@ run:
 linters-settings:
   govet:
     check-shadowing: true
-  golint:
+  revive:
     min-confidence: 0.8
   gocyclo:
     min-complexity: 10
-  maligned:
-    suggest-new: true
   dupl:
     threshold: 100
   goconst:
@@ -40,16 +38,20 @@ linters-settings:
       - ifElseChain
       - octalLiteral
       - whyNoLint
+  unused:
+    check-exported: false
+  exportloopref:
+    check-exported: false
 
 linters:
   enable:
     - bodyclose
-    - deadcode
     - depguard
     - dogsled
     - dupl
     - errcheck
     - exhaustive
+    - exportloopref      # replaces scopelint
     - funlen
     - gochecknoinits
     - goconst
@@ -57,29 +59,25 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - golint
     - gomnd
     - goprintffuncname
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - lll
     - misspell
     - nakedret
     - noctx
     - nolintlint
+    - revive             # replaces golint
     - rowserrcheck
-    - scopelint
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
-    - unused
-    - varcheck
+    - unused             # replaces deadcode, structcheck, varcheck
     - whitespace
   disable:
     - gochecknoglobals
@@ -87,11 +85,18 @@ linters:
     - godot
     - godox
     - goerr113
-    - maligned
     - nestif
     - prealloc
     - testpackage
     - wsl
+    # Deprecated linters - automatically disabled
+    - deadcode      # replaced by unused
+    - golint        # replaced by revive
+    - interfacer    # deprecated
+    - maligned      # deprecated
+    - scopelint     # replaced by exportloopref
+    - structcheck   # replaced by unused
+    - varcheck      # replaced by unused
 
 issues:
   exclude-rules:
